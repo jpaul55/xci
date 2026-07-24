@@ -12,7 +12,7 @@ import { getAnalyticsBaseFields } from '../../analytics/analyticsContext';
 type PreCallPayload = {
   type: 'pre-call';
   data: {
-    gucid?: string | null;
+    gucid: string;
   };
 };
 
@@ -64,7 +64,7 @@ const PrecallSummary = ({ payload, lob, msid, appId }: PrecallSummaryProps) => {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [spanLeadInfo, setSpanLeadInfo] = useState<SpanLeadInfo | null>(null);
 
-  const gucid = payload?.data?.gucid?.trim() || '';
+  const gucid = payload?.data?.gucid?.trim();
   const crmApp = appIdToCrmApp(appId ?? '');
 
 
@@ -235,12 +235,9 @@ const PrecallSummary = ({ payload, lob, msid, appId }: PrecallSummaryProps) => {
 
   if (!payload) return null;
 
-  const hasGucid = Boolean(gucid);
   // 404: no DynamoDB record → custom message
-  const showLoading = hasGucid && loading;
-  const showError = hasGucid && !loading && error;
-  const showNotFound = hasGucid && !loading && !error && notFound;
-  const showSuccess = hasGucid && !loading && !error && !notFound && summaryText;
+  const showNotFound = !loading && !error && notFound;
+  const showSuccess = !loading && !error && !notFound && summaryText;
   const showFeedback = showNotFound || Boolean(showSuccess);
 
   return (
@@ -259,13 +256,13 @@ const PrecallSummary = ({ payload, lob, msid, appId }: PrecallSummaryProps) => {
         <div className={styles.divider} />
 
       {/* Body states */}
-      {!hasGucid && (
-        <p className={styles.infoMessage}>No contact reason provided</p>
+      {!gucid && (
+        <p className={styles.noData}>No contact reason provided</p>
       )}
 
-      {showLoading && <p className={styles.loading}>Loading contact reason...</p>}
+      {loading && <p className={styles.loading}>Loading contact reason...</p>}
 
-      {showError && (
+      {!loading && error && (
         <div className={styles.errorContainer}>
           <p className={styles.errorText}>Unable to retrieve contact reason.</p>
           <button type="button" className={styles.retryBtn} onClick={handleRetry}>
@@ -284,7 +281,7 @@ const PrecallSummary = ({ payload, lob, msid, appId }: PrecallSummaryProps) => {
         </p>
       )}
 
-      {showSuccess && bullets.length > 0 && (
+      {!loading && !error && !notFound && summaryText && bullets.length > 0 && (
         <ul className={styles.bullets}>
           {bullets.map((item, idx) => (
             <li key={idx} className={styles.bulletItem}>
@@ -294,7 +291,7 @@ const PrecallSummary = ({ payload, lob, msid, appId }: PrecallSummaryProps) => {
         </ul>
       )}
 
-      {showSuccess && bullets.length === 0 && (
+      {!loading && !error && !notFound && summaryText && bullets.length === 0 && (
         <p className={styles.summaryText}>{parseTextWithBold(displaySummaryText)}</p>
       )}
 
